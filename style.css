@@ -2,18 +2,22 @@ body{
 margin:0;
 font-family:Arial, Helvetica, sans-serif;
 background:#f2f5f7;
+overflow-x:hidden;
+-webkit-tap-highlight-color:transparent;
 }
 
 /* ================= HEADER ================= */
 
 .header{
-height:40px;
+min-height:48px;
 background:#1B5E20;
 display:flex;
 align-items:center;
 justify-content:space-between;
-padding:0 15px;
+padding:8px 15px;
 box-shadow:0 2px 4px rgba(0,0,0,0.2);
+flex-wrap:wrap;
+gap:6px;
 }
 
 .title-left{
@@ -33,40 +37,46 @@ color:white;
 font-weight:bold;
 }
 
-
 /* ================= USER DASHBOARD ================= */
 
 .userContainer{
-max-width:420px;
+width:min(95%,900px);
 margin:20px auto;
 background:white;
 padding:15px;
-border-radius:10px;
+border-radius:12px;
 box-shadow:0 4px 12px rgba(0,0,0,0.15);
+box-sizing:border-box;
 }
 
+/* ================= LOGIN ================= */
 
-/* ================= LOGIN INPUT FIX ================= */
+#loginContainer{
+width:min(92%,420px);
+margin:25px auto;
+padding:22px;
+box-sizing:border-box;
+}
 
 #facultyIdInput,
 #facultyPinInput{
 text-align:center;
 }
 
-
 /* ================= MINI MAP ================= */
 
 .miniMapBox{
 width:100%;
 margin-bottom:15px;
+border-radius:12px;
+overflow:hidden;
 }
 
 #map{
-height:350px;
+height:clamp(280px,50vh,420px);
 width:100%;
-border-radius:8px;
+border-radius:12px;
 }
-
 
 /* ================= REQUEST GRID ================= */
 
@@ -81,20 +91,21 @@ color:#1B5E20;
 
 .requestGrid{
 display:grid;
-grid-template-columns:1fr 1fr;
+grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
 gap:10px;
 margin-top:10px;
 }
 
 .reqBtn{
-padding:10px;
+padding:12px;
 font-size:14px;
 background:#1B5E20;
 color:white;
 border:none;
-border-radius:6px;
+border-radius:8px;
 cursor:pointer;
 transition:0.2s;
+font-weight:bold;
 }
 
 .reqBtn:hover{
@@ -102,38 +113,37 @@ background:#145A1A;
 transform:translateY(-1px);
 }
 
-
 /* ================= REQUEST STATUS ================= */
 
 #requestStatus{
-margin-top:10px;
+margin-top:12px;
 font-size:13px;
 color:#444;
+line-height:1.5;
 }
-
 
 /* ================= LEGEND ================= */
 
 .legend{
-position:absolute;
-bottom:20px;
-left:10px;
-background:rgba(255,255,255,0.95);
+position:fixed;
+bottom:15px;
+left:15px;
+background:rgba(255,255,255,0.96);
 padding:8px 12px;
-border-radius:8px;
+border-radius:10px;
 font-size:12px;
-box-shadow:0 3px 8px rgba(0,0,0,0.3);
+box-shadow:0 3px 8px rgba(0,0,0,0.25);
 z-index:1000;
 display:flex;
 align-items:center;
 gap:12px;
+backdrop-filter:blur(6px);
 }
 
 .legend img{
 vertical-align:middle;
 margin-right:4px;
 }
-
 
 /* ================= DRIVER DEMAND PANEL ================= */
 
@@ -193,23 +203,23 @@ transition:0.2s;
 background:#145A1A;
 }
 
-
 /* ================= MOBILE ================= */
 
 @media (max-width:700px){
 
 .header{
-flex-wrap:wrap;
-height:auto;
-padding:6px 10px;
+justify-content:center;
+text-align:center;
+padding:10px;
+}
+
+.title-left,
+.update-time{
+width:100%;
 }
 
 .title-left{
-font-size:14px;
-}
-
-.title-right{
-font-size:11px;
+font-size:15px;
 }
 
 .update-time{
@@ -217,7 +227,35 @@ font-size:11px;
 }
 
 .userContainer{
-width:92%;
+width:94%;
+padding:12px;
+}
+
+#map{
+height:320px;
+}
+
+.reqBtn{
+font-size:14px;
+padding:12px;
+}
+
+.legend{
+left:50%;
+transform:translateX(-50%);
+bottom:10px;
+font-size:11px;
+padding:6px 10px;
+}
+
+}
+
+/* ================= SMALL DEVICES ================= */
+
+@media (max-width:480px){
+
+.requestGrid{
+grid-template-columns:1fr;
 }
 
 #map{
@@ -225,16 +263,7 @@ height:280px;
 }
 
 .reqBtn{
-font-size:13px;
-padding:9px;
-}
-
-.legend{
-bottom:10px;
-left:50%;
-transform:translateX(-50%);
-font-size:11px;
-padding:6px 10px;
+font-size:15px;
 }
 
 }
