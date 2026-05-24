@@ -15,8 +15,6 @@
 
 <meta name="theme-color" content="#1B5E20">
 
-<!-- iOS PWA Support -->
-
 <link
 rel="apple-touch-icon"
 sizes="192x192"
@@ -228,6 +226,16 @@ color:#666;
 line-height:1.5;
 }
 
+.serviceNotice{
+margin-top:12px;
+padding:10px;
+background:#FFF3E0;
+border-radius:8px;
+font-size:13px;
+font-weight:bold;
+color:#E65100;
+}
+
 @media (max-width:600px){
 
 .container{
@@ -291,6 +299,10 @@ align-items:flex-start !important;
 <div id="loginSection">
 
 <h2>Buggy Pilot</h2>
+
+<div class="serviceNotice">
+Service Timing: 11:30 AM – 4:00 PM
+</div>
 
 <p style="margin-bottom:10px;font-weight:bold;color:#444;">
 Select Buggy
@@ -432,12 +444,59 @@ firebase.initializeApp(firebaseConfig);
 if('serviceWorker' in navigator){
 
 navigator.serviceWorker
-.register('service-worker.js')
-.then(function(){
+.register('service-worker.js');
 
-console.log("PWA enabled");
+}
 
-});
+/* ===================================================== */
+/* SERVICE TIMING */
+/* ===================================================== */
+
+function isServiceAvailable(){
+
+const now = new Date();
+
+const indiaTime =
+new Date(
+now.toLocaleString(
+"en-US",
+{
+timeZone:"Asia/Kolkata"
+}
+)
+);
+
+const hours =
+indiaTime.getHours();
+
+const minutes =
+indiaTime.getMinutes();
+
+const currentMinutes =
+(hours * 60) + minutes;
+
+const startMinutes =
+(11 * 60) + 30;
+
+const endMinutes =
+(16 * 60);
+
+return (
+
+currentMinutes >= startMinutes &&
+
+currentMinutes <= endMinutes
+
+);
+
+}
+
+function showServiceClosedMessage(){
+
+document.getElementById("loginStatus")
+.innerText =
+
+"Buggy service available only between 11:30 AM and 4:00 PM";
 
 }
 
@@ -505,6 +564,14 @@ let buggyMarkers={};
 
 window.onload = function(){
 
+if(!isServiceAvailable()){
+
+showServiceClosedMessage();
+
+return;
+
+}
+
 const savedBuggy =
 localStorage.getItem("driverBuggy");
 
@@ -568,6 +635,14 @@ loginBtn.style.opacity = 1;
 }
 
 async function authenticate(){
+
+if(!isServiceAvailable()){
+
+showServiceClosedMessage();
+
+return;
+
+}
 
 const buggyId = selectedBuggy;
 
@@ -720,6 +795,14 @@ L.tileLayer(
 function startSharing(){
 
 navigator.geolocation.watchPosition(pos=>{
+
+if(!isServiceAvailable()){
+
+logoutDriver();
+
+return;
+
+}
 
 if(!currentBuggy) return;
 
@@ -900,6 +983,17 @@ document.getElementById("demandList")
 
 function claim(block){
 
+if(!isServiceAvailable()){
+
+document.getElementById("status")
+.innerText =
+
+"Buggy service closed for today";
+
+return;
+
+}
+
 if(!currentBuggy) return;
 
 firebase.database()
@@ -916,6 +1010,17 @@ document.getElementById("status").innerText=
 }
 
 function boarded(block){
+
+if(!isServiceAvailable()){
+
+document.getElementById("status")
+.innerText =
+
+"Buggy service closed for today";
+
+return;
+
+}
 
 firebase.database()
 .ref("requests/"+block)
@@ -954,6 +1059,20 @@ hiddenTimer = null;
 }
 
 });
+
+/* ===================================================== */
+/* AUTO LOGOUT AFTER 4 PM */
+/* ===================================================== */
+
+setInterval(function(){
+
+if(!isServiceAvailable()){
+
+logoutDriver();
+
+}
+
+},60000);
 
 window.onpageshow=function(event){
 
