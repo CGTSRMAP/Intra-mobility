@@ -7,13 +7,51 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- ================================================== -->
 <!-- PWA -->
+<!-- ================================================== -->
+
 <link rel="manifest" href="manifest.json">
+
 <meta name="theme-color" content="#1B5E20">
 
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+<!-- iOS PWA Support -->
+
+<link
+rel="apple-touch-icon"
+sizes="192x192"
+href="icons/icon-192.png"
+>
+
+<link
+rel="apple-touch-icon"
+sizes="512x512"
+href="icons/icon-512.png"
+>
+
+<meta
+name="apple-mobile-web-app-capable"
+content="yes"
+>
+
+<meta
+name="apple-mobile-web-app-status-bar-style"
+content="default"
+>
+
+<meta
+name="apple-mobile-web-app-title"
+content="Buggy Pilot"
+>
+
+<meta http-equiv="Cache-Control"
+content="no-cache, no-store, must-revalidate">
+
+<meta http-equiv="Pragma"
+content="no-cache">
+
+<meta http-equiv="Expires"
+content="0">
 
 <link rel="stylesheet"
 href="https://unpkg.com/leaflet/dist/leaflet.css"/>
@@ -21,6 +59,7 @@ href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <style>
@@ -152,10 +191,6 @@ width:100%;
 text-align:left;
 }
 
-/* ===================================================== */
-/* BUGGY BUTTONS */
-/* ===================================================== */
-
 .buggyGrid{
 display:grid;
 grid-template-columns:1fr 1fr;
@@ -192,10 +227,6 @@ font-weight:bold;
 color:#666;
 line-height:1.5;
 }
-
-/* ===================================================== */
-/* MOBILE */
-/* ===================================================== */
 
 @media (max-width:600px){
 
@@ -376,10 +407,6 @@ Logout
 
 <script>
 
-/* ===================================================== */
-/* FIREBASE */
-/* ===================================================== */
-
 const firebaseConfig = {
 
 apiKey: "AIzaSyAvjtrYcKPdME8cClw2uUrspUldYXFw6B-g",
@@ -445,19 +472,11 @@ return hashHex;
 
 }
 
-/* ===================================================== */
-/* DRIVER STATE */
-/* ===================================================== */
-
 let currentBuggy = null;
 let selectedBuggy = null;
 let hiddenTimer = null;
 
 const DRIVER_TIMEOUT = 40000;
-
-/* ===================================================== */
-/* ICON */
-/* ===================================================== */
 
 const buggyIcon=L.icon({
 
@@ -468,10 +487,6 @@ iconSize:[38,38],
 iconAnchor:[19,19]
 
 });
-
-/* ===================================================== */
-/* STOPS */
-/* ===================================================== */
 
 const blockLocations={
 
@@ -487,10 +502,6 @@ GATE6:[16.4598,80.5049]
 
 let driverMap;
 let buggyMarkers={};
-
-/* ===================================================== */
-/* SESSION RESTORE */
-/* ===================================================== */
 
 window.onload = function(){
 
@@ -525,10 +536,6 @@ listenBuggies();
 
 };
 
-/* ===================================================== */
-/* SELECT BUGGY */
-/* ===================================================== */
-
 function selectBuggy(event,buggyId){
 
 selectedBuggy = buggyId;
@@ -559,10 +566,6 @@ loginBtn.disabled = false;
 loginBtn.style.opacity = 1;
 
 }
-
-/* ===================================================== */
-/* LOGIN */
-/* ===================================================== */
 
 async function authenticate(){
 
@@ -686,10 +689,6 @@ document.getElementById("loginStatus")
 
 }
 
-/* ===================================================== */
-/* LOGOUT */
-/* ===================================================== */
-
 function logoutDriver(){
 
 if(currentBuggy){
@@ -707,10 +706,6 @@ window.location.reload();
 
 }
 
-/* ===================================================== */
-/* MAP */
-/* ===================================================== */
-
 function initializeMap(){
 
 driverMap=L.map('driverMap')
@@ -721,10 +716,6 @@ L.tileLayer(
 ).addTo(driverMap);
 
 }
-
-/* ===================================================== */
-/* LOCATION SHARING */
-/* ===================================================== */
 
 function startSharing(){
 
@@ -745,10 +736,6 @@ time:Date.now()
 });
 
 }
-
-/* ===================================================== */
-/* SHOW BUGGIES */
-/* ===================================================== */
 
 function listenBuggies(){
 
@@ -785,10 +772,6 @@ buggyMarkers[child.key]=L.marker(
 });
 
 }
-
-/* ===================================================== */
-/* DEMAND LIST */
-/* ===================================================== */
 
 function listenDemand(){
 
@@ -915,10 +898,6 @@ document.getElementById("demandList")
 
 }
 
-/* ===================================================== */
-/* CLAIM */
-/* ===================================================== */
-
 function claim(block){
 
 if(!currentBuggy) return;
@@ -936,10 +915,6 @@ document.getElementById("status").innerText=
 
 }
 
-/* ===================================================== */
-/* BOARDED */
-/* ===================================================== */
-
 function boarded(block){
 
 firebase.database()
@@ -950,10 +925,6 @@ document.getElementById("status").innerText=
 "✅ Passengers boarded successfully";
 
 }
-
-/* ===================================================== */
-/* AUTO LOGOUT IF APP HIDDEN */
-/* ===================================================== */
 
 document.addEventListener("visibilitychange",function(){
 
@@ -983,10 +954,6 @@ hiddenTimer = null;
 }
 
 });
-
-/* ===================================================== */
-/* HARD REFRESH */
-/* ===================================================== */
 
 window.onpageshow=function(event){
 
