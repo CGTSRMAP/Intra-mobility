@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Buggy Pilot</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
+background:#f2f5f7;
+display:flex;
+justify-content:center;
+align-items:flex-start;
+min-height:100vh;
+padding-top:30px;
+}
+
+.container{
+background:white;
+padding:25px;
+border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.15);
+width:420px;
+text-align:center;
+max-height:92vh;
+overflow-y:auto;
+}
+
+h2{
+margin-top:0;
+color:#1B5E20;
+}
+
+input{
+width:180px;
+padding:10px;
+font-size:16px;
+margin-top:15px;
+border-radius:6px;
+border:1px solid #ccc;
+text-align:center;
+margin:auto;
+display:block;
+}
+
+button{
+padding:8px 12px;
+font-size:13px;
+background:#1B5E20;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+margin:2px;
+}
+
+button:hover{
+background:#145A1A;
+}
+
+.boarded{
+background:#0D47A1;
+}
+
+.claimBtn{
+background:#C62828;
+}
+
+.status{
+margin-top:10px;
+font-size:14px;
+color:#444;
+font-weight:bold;
+}
+
+#driverMap{
+height:220px;
+border-radius:8px;
+margin-bottom:15px;
+}
+
+.block{
+display:flex;
+align-items:center;
+justify-content:space-between;
+margin-top:10px;
+padding:10px;
+border-radius:8px;
+border:2px solid #ddd;
+background:#fafafa;
+}
+
+.claimed{
+background:#E8F5E9;
+border:2px solid #2E7D32;
+}
+
+.location{
+width:140px;
+font-size:14px;
+font-weight:bold;
+background:#E8F5E9;
+padding:6px;
+border-radius:4px;
+text-align:left;
+}
+
+.count{
+font-weight:bold;
+width:35px;
+text-align:center;
+background:#FFF3E0;
+padding:6px;
+border-radius:4px;
+font-size:16px;
+}
+
+.claimInfo{
+font-size:12px;
+font-weight:bold;
+color:#2E7D32;
+margin-top:4px;
+width:100%;
+text-align:left;
+}
+
+.buggyGrid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+margin-top:15px;
+}
+
+.buggySelectBtn{
+padding:14px;
+font-size:15px;
+font-weight:bold;
+border-radius:8px;
+background:#ECEFF1;
+color:#333;
+border:2px solid #CFD8DC;
+cursor:pointer;
+transition:0.2s;
+}
+
+.buggySelectBtn:hover{
+background:#DDE7EA;
+}
+
+.selectedBuggy{
+background:#1B5E20 !important;
+color:white !important;
+border:2px solid #1B5E20 !important;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div id="loginSection">
+
+<h2>Buggy Pilot</h2>
+
+<p style="margin-bottom:10px;font-weight:bold;color:#444;">
+Select Buggy
+</p>
+
+<div class="buggyGrid">
+
+<button class="buggySelectBtn"
+onclick="selectBuggy(event,'buggy1')">
+BUGGY 1
+</button>
+
+<button class="buggySelectBtn"
+onclick="selectBuggy(event,'buggy2')">
+BUGGY 2
+</button>
+
+<button class="buggySelectBtn"
+onclick="selectBuggy(event,'buggy3')">
+BUGGY 3
+</button>
+
+<button class="buggySelectBtn"
+onclick="selectBuggy(event,'buggy4')">
+BUGGY 4
+</button>
+
+<button class="buggySelectBtn"
+onclick="selectBuggy(event,'buggy5')">
+BUGGY 5
+</button>
+
+<button class="buggySelectBtn"
+onclick="selectBuggy(event,'buggy6')">
+BUGGY 6
+</button>
+
+<button class="buggySelectBtn"
+onclick="selectBuggy(event,'buggy7')">
+BUGGY 7
+</button>
+
+<button class="buggySelectBtn"
+onclick="selectBuggy(event,'buggy8')">
+BUGGY 8
+</button>
+
+</div>
+
+<p
+id="selectedBuggyText"
+style="
+font-size:14px;
+font-weight:bold;
+color:#1B5E20;
+margin-top:15px;
+"
+>
+No buggy selected
+</p>
+
+<input
+type="password"
+id="pinInput"
+maxlength="4"
+placeholder="Driver PIN"
+>
+
+<button
+onclick="authenticate()"
+id="driverLoginBtn"
+disabled
+style="opacity:0.5;"
+>
+Login
+</button>
+
+<p id="loginStatus" class="status"></p>
+
+</div>
+
+<div id="driverPanel" style="display:none;">
+
+<div style="display:flex;justify-content:space-between;align-items:center;">
+
+<h3 id="driverName"></h3>
+
+<button onclick="logoutDriver()">
+Logout
+</button>
+
+</div>
+
+<p id="status" class="status"></p>
+
+<div id="driverMap"></div>
+
+<h3>Waiting Passengers</h3>
+
+<div id="demandList"></div>
+
+</div>
+
+</div>
+
+<audio id="alertSound" loop>
+<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
+</audio>
+
+<script>
+
+/* ===================================================== */
+/* FIREBASE */
+/* ===================================================== */
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyAvjtrYcKPdME8cClw2uUrspUldYXFw6B-g",
+authDomain: "mobility-ca790.firebaseapp.com",
+databaseURL: "https://mobility-ca790-default-rtdb.asia-southeast1.firebasedatabase.app",
+projectId: "mobility-ca790",
+storageBucket: "mobility-ca790.firebasestorage.app",
+messagingSenderId: "832491995447",
+appId: "1:832491995447:web:9f5de3b844e3119f79ab2"
+
+};
+
+if (!firebase.apps.length) {
+
+firebase.initializeApp(firebaseConfig);
+
+}
+
+
+/* ===================================================== */
+/* SHA256 */
+/* ===================================================== */
+
+async function sha256(message){
+
+const msgBuffer =
+new TextEncoder().encode(message);
+
+const hashBuffer =
+await crypto.subtle.digest(
+'SHA-256',
+msgBuffer
+);
+
+const hashArray =
+Array.from(
+new Uint8Array(hashBuffer)
+);
+
+const hashHex =
+hashArray
+.map(b =>
+b.toString(16).padStart(2,'0')
+)
+.join('');
+
+return hashHex;
+
+}
+
+
+/* ===================================================== */
+/* DRIVER STATE */
+/* ===================================================== */
+
+let currentBuggy = null;
+let selectedBuggy = null;
+let hiddenTimer = null;
+
+const DRIVER_TIMEOUT = 40000;
+
+
+/* ===================================================== */
+/* ICON */
+/* ===================================================== */
+
+const buggyIcon=L.icon({
+
+iconUrl:
+"https://cdn-icons-png.flaticon.com/512/744/744465.png",
+
+iconSize:[38,38],
+iconAnchor:[19,19]
+
+});
+
+
+/* ===================================================== */
+/* STOPS */
+/* ===================================================== */
+
+const blockLocations={
+
+ADMIN:[16.4645,80.5080],
+X_LAB:[16.4636,80.5071],
+SR_BLOCK_ENTRANCE:[16.4631,80.5067],
+STUDENT_COUNCIL:[16.4625,80.5069],
+CV_RAMAN:[16.4620,80.5063],
+GATE3:[16.4601,80.5070],
+GATE6:[16.4598,80.5049]
+
+};
+
+let driverMap;
+let buggyMarkers={};
+
+
+/* ===================================================== */
+/* SESSION RESTORE */
+/* ===================================================== */
+
+window.onload = function(){
+
+const savedBuggy =
+localStorage.getItem("driverBuggy");
+
+const auth =
+localStorage.getItem("driverAuthenticated");
+
+if(savedBuggy && auth === "true"){
+
+currentBuggy = savedBuggy;
+
+document.getElementById("loginSection")
+.style.display = "none";
+
+document.getElementById("driverPanel")
+.style.display = "block";
+
+document.getElementById("driverName")
+.innerText = currentBuggy.toUpperCase();
+
+initializeMap();
+
+startSharing();
+
+listenDemand();
+
+listenBuggies();
+
+}
+
+};
+
+
+/* ===================================================== */
+/* SELECT BUGGY */
+/* ===================================================== */
+
+function selectBuggy(event,buggyId){
+
+selectedBuggy = buggyId;
+
+document
+.querySelectorAll(".buggySelectBtn")
+.forEach(btn=>{
+
+btn.classList.remove("selectedBuggy");
+
+});
+
+event.target.classList.add("selectedBuggy");
+
+document.getElementById(
+"selectedBuggyText"
+).innerText =
+
+"Selected: " +
+buggyId.toUpperCase();
+
+const loginBtn =
+document.getElementById(
+"driverLoginBtn"
+);
+
+loginBtn.disabled = false;
+loginBtn.style.opacity = 1;
+
+}
+
+
+/* ===================================================== */
+/* LOGIN */
+/* ===================================================== */
+
+async function authenticate(){
+
+const buggyId = selectedBuggy;
+
+const pin =
+document.getElementById("pinInput")
+.value
+.trim();
+
+if(!selectedBuggy || !pin){
+
+document.getElementById("loginStatus")
+.innerText = "Select buggy and enter PIN";
+
+return;
+
+}
+
+const hashedPin =
+await sha256(pin);
+
+firebase.database()
+.ref("driverAuth/"+buggyId)
+.once("value")
+.then(snapshot=>{
+
+const data = snapshot.val();
+
+if(!data){
+
+document.getElementById("loginStatus")
+.innerText = "Invalid Buggy";
+
+return;
+
+}
+
+if(!data.active){
+
+document.getElementById("loginStatus")
+.innerText = "Driver disabled";
+
+return;
+
+}
+
+
+/* ===================================================== */
+/* HASH VALIDATION */
+/* ===================================================== */
+
+if(data.pinHash !== hashedPin){
+
+document.getElementById("loginStatus")
+.innerText = "Invalid PIN";
+
+return;
+
+}
+
+firebase.database()
+.ref("drivers/"+buggyId)
+.once("value")
+.then(driverSnap=>{
+
+const driverData = driverSnap.val();
+
+if(driverData && driverData.time){
+
+const age =
+Date.now() - driverData.time;
+
+if(age < DRIVER_TIMEOUT){
+
+document.getElementById("loginStatus")
+.innerText =
+"⚠️ Driver already active on another device";
+
+return;
+
+}
+
+}
+
+currentBuggy = buggyId;
+
+localStorage.setItem(
+"driverBuggy",
+buggyId
+);
+
+localStorage.setItem(
+"driverAuthenticated",
+"true"
+);
+
+document.getElementById("loginSection")
+.style.display = "none";
+
+document.getElementById("driverPanel")
+.style.display = "block";
+
+document.getElementById("driverName")
+.innerText = currentBuggy.toUpperCase();
+
+initializeMap();
+
+startSharing();
+
+listenDemand();
+
+listenBuggies();
+
+});
+
+})
+.catch(error=>{
+
+console.error(error);
+
+document.getElementById("loginStatus")
+.innerText = "Firebase connection error";
+
+});
+
+}
+
+
+/* ===================================================== */
+/* LOGOUT */
+/* ===================================================== */
+
+function logoutDriver(){
+
+if(currentBuggy){
+
+firebase.database()
+.ref("drivers/"+currentBuggy)
+.remove();
+
+}
+
+localStorage.removeItem("driverBuggy");
+localStorage.removeItem("driverAuthenticated");
+
+window.location.reload();
+
+}
+
+
+/* ===================================================== */
+/* MAP */
+/* ===================================================== */
+
+function initializeMap(){
+
+driverMap=L.map('driverMap')
+.setView([16.4632,80.5069],16);
+
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+).addTo(driverMap);
+
+}
+
+
+/* ===================================================== */
+/* LOCATION SHARING */
+/* ===================================================== */
+
+function startSharing(){
+
+navigator.geolocation.watchPosition(pos=>{
+
+if(!currentBuggy) return;
+
+firebase.database()
+.ref("drivers/"+currentBuggy)
+.set({
+
+lat:pos.coords.latitude,
+lng:pos.coords.longitude,
+time:Date.now()
+
+});
+
+});
+
+}
+
+
+/* ===================================================== */
+/* SHOW BUGGIES */
+/* ===================================================== */
+
+function listenBuggies(){
+
+firebase.database()
+.ref("drivers")
+.on("value",snap=>{
+
+Object.values(buggyMarkers)
+.forEach(m=>driverMap.removeLayer(m));
+
+buggyMarkers={};
+
+snap.forEach(child=>{
+
+let d=child.val();
+
+if(!d) return;
+
+const age=Date.now()-d.time;
+
+if(age>30000){
+
+return;
+
+}
+
+buggyMarkers[child.key]=L.marker(
+[d.lat,d.lng],
+{icon:buggyIcon}
+).addTo(driverMap);
+
+});
+
+});
+
+}
+
+
+/* ===================================================== */
+/* DEMAND LIST */
+/* ===================================================== */
+
+function listenDemand(){
+
+firebase.database()
+.ref("requests")
+.on("value",snap=>{
+
+let arr=[];
+
+let unclaimedExists=false;
+
+Object.keys(blockLocations).forEach(b=>{
+
+arr.push({
+block:b,
+count:0,
+assignedTo:null
+});
+
+});
+
+snap.forEach(child=>{
+
+let d=child.val()||{};
+
+let item=arr.find(x=>x.block===child.key);
+
+if(item){
+
+item.count=d.count||0;
+item.assignedTo=d.assignedTo||null;
+
+}
+
+if(
+(d.count||0)>0 &&
+!d.assignedTo
+){
+unclaimedExists=true;
+}
+
+});
+
+const sound=document.getElementById("alertSound");
+
+if(unclaimedExists){
+
+sound.playbackRate = 4;
+sound.play().catch(()=>{});
+
+}else{
+
+sound.pause();
+sound.currentTime=0;
+
+}
+
+arr.sort((a,b)=>b.count-a.count);
+
+document.getElementById("demandList").innerHTML="";
+
+arr.forEach(item=>{
+
+if(item.count<=0) return;
+
+const row=document.createElement("div");
+
+if(item.assignedTo){
+
+row.className="block claimed";
+
+}else{
+
+row.className="block";
+
+}
+
+row.innerHTML=`
+
+<div style="display:flex;align-items:center;gap:8px;width:100%;justify-content:space-between;flex-wrap:wrap;">
+
+<span class="location">
+${item.block.replaceAll("_"," ")}
+</span>
+
+<span class="count">
+${item.count}
+</span>
+
+${
+!item.assignedTo
+?
+`
+<button class="claimBtn"
+onclick="claim('${item.block}')">
+Claim
+</button>
+`
+:
+`
+<div class="claimInfo">
+🚗 Claimed by ${item.assignedTo.toUpperCase()}
+</div>
+`
+}
+
+<button class="boarded"
+onclick="boarded('${item.block}')">
+
+Boarded
+
+</button>
+
+</div>
+
+`;
+
+document.getElementById("demandList")
+.appendChild(row);
+
+});
+
+});
+
+}
+
+
+/* ===================================================== */
+/* CLAIM */
+/* ===================================================== */
+
+function claim(block){
+
+if(!currentBuggy) return;
+
+firebase.database()
+.ref("requests/"+block)
+.update({
+
+assignedTo:currentBuggy
+
+});
+
+document.getElementById("status").innerText=
+"📍 Location claimed by " + currentBuggy;
+
+}
+
+
+/* ===================================================== */
+/* BOARDED */
+/* ===================================================== */
+
+function boarded(block){
+
+firebase.database()
+.ref("requests/"+block)
+.remove();
+
+document.getElementById("status").innerText=
+"✅ Passengers boarded successfully";
+
+}
+
+
+/* ===================================================== */
+/* AUTO LOGOUT IF APP HIDDEN */
+/* ===================================================== */
+
+document.addEventListener("visibilitychange",function(){
+
+if(document.hidden){
+
+hiddenTimer = setTimeout(function(){
+
+alert(
+"Session expired because app was inactive."
+);
+
+logoutDriver();
+
+},40000);
+
+}
+else{
+
+if(hiddenTimer){
+
+clearTimeout(hiddenTimer);
+
+hiddenTimer = null;
+
+}
+
+}
+
+});
+
+
+/* ===================================================== */
+/* HARD REFRESH */
+/* ===================================================== */
+
+window.onpageshow=function(event){
+
+if(event.persisted){
+
+window.location.reload();
+
+}
+
+};
+
+</script>
+
+</body>
+</html>
