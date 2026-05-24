@@ -7,11 +7,16 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B5E20">
+
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -28,18 +33,22 @@ display:flex;
 justify-content:center;
 align-items:flex-start;
 min-height:100vh;
-padding-top:30px;
+padding:20px 10px;
+box-sizing:border-box;
+-webkit-tap-highlight-color:transparent;
+overflow-x:hidden;
 }
 
 .container{
 background:white;
-padding:25px;
-border-radius:10px;
+padding:20px;
+border-radius:14px;
 box-shadow:0 4px 12px rgba(0,0,0,0.15);
-width:420px;
+width:min(100%,420px);
 text-align:center;
-max-height:92vh;
+max-height:95vh;
 overflow-y:auto;
+box-sizing:border-box;
 }
 
 h2{
@@ -48,30 +57,32 @@ color:#1B5E20;
 }
 
 input{
-width:180px;
-padding:10px;
+width:100%;
+padding:12px;
 font-size:16px;
 margin-top:15px;
-border-radius:6px;
+border-radius:8px;
 border:1px solid #ccc;
 text-align:center;
-margin:auto;
-display:block;
+box-sizing:border-box;
 }
 
 button{
-padding:8px 12px;
-font-size:13px;
+padding:10px 12px;
+font-size:14px;
 background:#1B5E20;
 color:white;
 border:none;
-border-radius:6px;
+border-radius:8px;
 cursor:pointer;
 margin:2px;
+transition:0.2s;
+font-weight:bold;
 }
 
 button:hover{
 background:#145A1A;
+transform:translateY(-1px);
 }
 
 .boarded{
@@ -90,9 +101,10 @@ font-weight:bold;
 }
 
 #driverMap{
-height:220px;
-border-radius:8px;
+height:300px;
+border-radius:10px;
 margin-bottom:15px;
+width:100%;
 }
 
 .block{
@@ -101,7 +113,7 @@ align-items:center;
 justify-content:space-between;
 margin-top:10px;
 padding:10px;
-border-radius:8px;
+border-radius:10px;
 border:2px solid #ddd;
 background:#fafafa;
 }
@@ -117,7 +129,7 @@ font-size:14px;
 font-weight:bold;
 background:#E8F5E9;
 padding:6px;
-border-radius:4px;
+border-radius:6px;
 text-align:left;
 }
 
@@ -127,7 +139,7 @@ width:35px;
 text-align:center;
 background:#FFF3E0;
 padding:6px;
-border-radius:4px;
+border-radius:6px;
 font-size:16px;
 }
 
@@ -139,6 +151,10 @@ margin-top:4px;
 width:100%;
 text-align:left;
 }
+
+/* ===================================================== */
+/* BUGGY BUTTONS */
+/* ===================================================== */
 
 .buggyGrid{
 display:grid;
@@ -167,6 +183,70 @@ background:#DDE7EA;
 background:#1B5E20 !important;
 color:white !important;
 border:2px solid #1B5E20 !important;
+}
+
+.driverFooter{
+margin-top:18px;
+font-size:13px;
+font-weight:bold;
+color:#666;
+line-height:1.5;
+}
+
+/* ===================================================== */
+/* MOBILE */
+/* ===================================================== */
+
+@media (max-width:600px){
+
+.container{
+padding:16px;
+}
+
+#driverMap{
+height:260px;
+}
+
+.block{
+padding:8px;
+}
+
+.location{
+width:120px;
+font-size:13px;
+}
+
+.count{
+font-size:14px;
+}
+
+button{
+font-size:13px;
+padding:9px 10px;
+}
+
+}
+
+@media (max-width:420px){
+
+.buggyGrid{
+grid-template-columns:1fr;
+}
+
+#driverMap{
+height:240px;
+}
+
+.location{
+width:100%;
+margin-bottom:6px;
+}
+
+.block div{
+flex-direction:column;
+align-items:flex-start !important;
+}
+
 }
 
 </style>
@@ -259,11 +339,16 @@ Login
 
 <p id="loginStatus" class="status"></p>
 
+<p class="driverFooter">
+Developed by<br>
+Centre for Geospatial Technology
+</p>
+
 </div>
 
 <div id="driverPanel" style="display:none;">
 
-<div style="display:flex;justify-content:space-between;align-items:center;">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
 
 <h3 id="driverName"></h3>
 
@@ -313,6 +398,21 @@ firebase.initializeApp(firebaseConfig);
 
 }
 
+/* ===================================================== */
+/* PWA */
+/* ===================================================== */
+
+if('serviceWorker' in navigator){
+
+navigator.serviceWorker
+.register('service-worker.js')
+.then(function(){
+
+console.log("PWA enabled");
+
+});
+
+}
 
 /* ===================================================== */
 /* SHA256 */
@@ -345,7 +445,6 @@ return hashHex;
 
 }
 
-
 /* ===================================================== */
 /* DRIVER STATE */
 /* ===================================================== */
@@ -355,7 +454,6 @@ let selectedBuggy = null;
 let hiddenTimer = null;
 
 const DRIVER_TIMEOUT = 40000;
-
 
 /* ===================================================== */
 /* ICON */
@@ -370,7 +468,6 @@ iconSize:[38,38],
 iconAnchor:[19,19]
 
 });
-
 
 /* ===================================================== */
 /* STOPS */
@@ -390,7 +487,6 @@ GATE6:[16.4598,80.5049]
 
 let driverMap;
 let buggyMarkers={};
-
 
 /* ===================================================== */
 /* SESSION RESTORE */
@@ -429,7 +525,6 @@ listenBuggies();
 
 };
 
-
 /* ===================================================== */
 /* SELECT BUGGY */
 /* ===================================================== */
@@ -464,7 +559,6 @@ loginBtn.disabled = false;
 loginBtn.style.opacity = 1;
 
 }
-
 
 /* ===================================================== */
 /* LOGIN */
@@ -515,11 +609,6 @@ document.getElementById("loginStatus")
 return;
 
 }
-
-
-/* ===================================================== */
-/* HASH VALIDATION */
-/* ===================================================== */
 
 if(data.pinHash !== hashedPin){
 
@@ -597,7 +686,6 @@ document.getElementById("loginStatus")
 
 }
 
-
 /* ===================================================== */
 /* LOGOUT */
 /* ===================================================== */
@@ -619,7 +707,6 @@ window.location.reload();
 
 }
 
-
 /* ===================================================== */
 /* MAP */
 /* ===================================================== */
@@ -634,7 +721,6 @@ L.tileLayer(
 ).addTo(driverMap);
 
 }
-
 
 /* ===================================================== */
 /* LOCATION SHARING */
@@ -659,7 +745,6 @@ time:Date.now()
 });
 
 }
-
 
 /* ===================================================== */
 /* SHOW BUGGIES */
@@ -700,7 +785,6 @@ buggyMarkers[child.key]=L.marker(
 });
 
 }
-
 
 /* ===================================================== */
 /* DEMAND LIST */
@@ -831,7 +915,6 @@ document.getElementById("demandList")
 
 }
 
-
 /* ===================================================== */
 /* CLAIM */
 /* ===================================================== */
@@ -853,7 +936,6 @@ document.getElementById("status").innerText=
 
 }
 
-
 /* ===================================================== */
 /* BOARDED */
 /* ===================================================== */
@@ -868,7 +950,6 @@ document.getElementById("status").innerText=
 "✅ Passengers boarded successfully";
 
 }
-
 
 /* ===================================================== */
 /* AUTO LOGOUT IF APP HIDDEN */
@@ -902,7 +983,6 @@ hiddenTimer = null;
 }
 
 });
-
 
 /* ===================================================== */
 /* HARD REFRESH */
