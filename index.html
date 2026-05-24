@@ -1,11 +1,525 @@
-<!-- ===================================================== -->
-<!-- SERVICE TIMING CONTROL -->
-<!-- ===================================================== -->
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>SRMAP Buggy</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ================================================== -->
+<!-- PWA -->
+<!-- ================================================== -->
+
+<link rel="manifest" href="manifest.json">
+
+<meta name="theme-color" content="#1B5E20">
+
+<!-- iOS PWA Support -->
+
+<link
+rel="apple-touch-icon"
+sizes="192x192"
+href="icons/icon-192.png"
+>
+
+<link
+rel="apple-touch-icon"
+sizes="512x512"
+href="icons/icon-512.png"
+>
+
+<meta
+name="apple-mobile-web-app-capable"
+content="yes"
+>
+
+<meta
+name="apple-mobile-web-app-status-bar-style"
+content="default"
+>
+
+<meta
+name="apple-mobile-web-app-title"
+content="Intra Mobility"
+>
+
+<!-- Prevent browser cache -->
+
+<meta http-equiv="Cache-Control"
+content="no-cache, no-store, must-revalidate">
+
+<meta http-equiv="Pragma"
+content="no-cache">
+
+<meta http-equiv="Expires"
+content="0">
+
+<!-- Leaflet -->
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<!-- Main CSS -->
+
+<link rel="stylesheet"
+href="style.css?v=17"/>
+
+<!-- Leaflet JS -->
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- Firebase -->
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<style>
+
+body{
+margin:0;
+padding:0;
+background:#f2f4f7;
+font-family:Arial, Helvetica, sans-serif;
+overflow-x:hidden;
+-webkit-tap-highlight-color:transparent;
+}
+
+#loginContainer{
+width:min(92%,420px);
+margin:25px auto;
+padding:22px;
+box-sizing:border-box;
+}
+
+#facultyIdInput,
+#facultyPinInput{
+width:100%;
+padding:12px;
+margin-top:10px;
+margin-bottom:10px;
+font-size:16px;
+border-radius:8px;
+border:1px solid #ccc;
+box-sizing:border-box;
+text-align:center;
+}
+
+#facultyPinInput{
+letter-spacing:4px;
+}
+
+#facultyLoginBtn{
+width:100%;
+}
+
+.userContainer{
+width:min(95%,900px);
+margin:auto;
+padding:15px;
+box-sizing:border-box;
+background:white;
+border-radius:12px;
+box-shadow:0 4px 12px rgba(0,0,0,0.15);
+margin-top:20px;
+margin-bottom:30px;
+}
+
+.miniMapBox{
+width:100%;
+border-radius:12px;
+overflow:hidden;
+margin-bottom:20px;
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+#map{
+width:100%;
+height:clamp(280px,50vh,420px);
+z-index:1;
+}
+
+.requestBox{
+position:relative;
+z-index:10;
+text-align:center;
+}
+
+#facultyDisplay{
+font-size:14px;
+font-weight:bold;
+margin-bottom:15px;
+color:#1B5E20;
+}
+
+.logoutBtn{
+padding:10px 14px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+background:#E0E0E0;
+font-weight:bold;
+}
+
+.logoutBtn:hover{
+background:#CCCCCC;
+}
+
+#loginStatus{
+font-size:14px;
+font-weight:bold;
+margin-top:10px;
+color:#C62828;
+}
+
+.serviceNotice{
+background:#FFF3E0;
+color:#E65100;
+padding:12px;
+border-radius:8px;
+font-size:14px;
+font-weight:bold;
+margin-bottom:18px;
+}
+
+.cgtFooter{
+margin-top:20px;
+font-size:13px;
+font-weight:bold;
+color:#666;
+text-align:center;
+line-height:1.6;
+}
+
+.requestGrid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+gap:10px;
+margin-top:15px;
+}
+
+.reqBtn{
+padding:12px;
+font-size:14px;
+background:#1B5E20;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+transition:0.2s;
+font-weight:bold;
+}
+
+.reqBtn:hover{
+background:#145A1A;
+transform:translateY(-1px);
+}
+
+.legend{
+position:fixed;
+bottom:15px;
+left:15px;
+background:rgba(255,255,255,0.95);
+padding:8px 12px;
+border-radius:10px;
+font-size:12px;
+box-shadow:0 3px 8px rgba(0,0,0,0.25);
+z-index:1000;
+display:flex;
+align-items:center;
+gap:12px;
+backdrop-filter:blur(6px);
+}
+
+.legend img{
+vertical-align:middle;
+margin-right:4px;
+}
+
+.header{
+height:auto;
+background:#1B5E20;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:10px 15px;
+box-shadow:0 2px 4px rgba(0,0,0,0.2);
+flex-wrap:wrap;
+gap:5px;
+}
+
+.title-left{
+color:white;
+font-size:16px;
+font-weight:bold;
+}
+
+.update-time{
+color:white;
+font-size:12px;
+}
+
+@media (max-width:700px){
+
+.header{
+justify-content:center;
+text-align:center;
+}
+
+.title-left,
+.update-time{
+width:100%;
+}
+
+.title-left{
+font-size:15px;
+}
+
+.update-time{
+font-size:11px;
+}
+
+.userContainer{
+width:94%;
+padding:12px;
+}
+
+#map{
+height:320px;
+}
+
+.reqBtn{
+font-size:14px;
+padding:12px;
+}
+
+.legend{
+left:50%;
+transform:translateX(-50%);
+bottom:10px;
+font-size:11px;
+padding:6px 10px;
+}
+
+}
+
+@media (max-width:480px){
+
+.requestGrid{
+grid-template-columns:1fr;
+}
+
+#map{
+height:280px;
+}
+
+.reqBtn{
+font-size:15px;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<div class="title-left">
+SRM University AP Intra Mobility Dashboard
+</div>
+
+<div id="activeBuggies" class="update-time">
+Active Buggies: 0
+</div>
+
+<div id="lastUpdate" class="update-time">
+Last updated: --
+</div>
+
+</div>
+
+<div
+id="loginContainer"
+class="requestBox"
+>
+
+<h3 style="text-align:center;">
+Faculty Authentication
+</h3>
+
+<div class="serviceNotice">
+Buggy service available only between 11:30 AM and 4:00 PM
+</div>
+
+<input
+type="text"
+id="facultyIdInput"
+placeholder="Enter Faculty ID"
+/>
+
+<input
+type="password"
+id="facultyPinInput"
+maxlength="4"
+placeholder="Enter 4 Digit PIN"
+/>
+
+<button
+onclick="loginFaculty()"
+class="reqBtn"
+id="facultyLoginBtn"
+>
+Login
+</button>
+
+<p id="loginStatus"></p>
+
+<p class="cgtFooter">
+Developed by<br>
+Centre for Geospatial Technology
+</p>
+
+</div>
+
+<div
+class="userContainer"
+id="mainDashboard"
+style="display:none;"
+>
+
+<div class="miniMapBox">
+
+<div id="map"></div>
+
+</div>
+
+<div class="requestBox">
+
+<div
+style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:10px;
+flex-wrap:wrap;
+"
+>
+
+<h3 style="margin:0;">
+Where are you waiting for the buggy?
+</h3>
+
+<button
+onclick="logoutFaculty()"
+class="logoutBtn"
+>
+Logout
+</button>
+
+</div>
+
+<p id="facultyDisplay"></p>
+
+<div class="requestGrid">
+
+<button class="reqBtn"
+onclick="sendRequest('ADMIN')">
+Admin
+</button>
+
+<button class="reqBtn"
+onclick="sendRequest('X_LAB')">
+X Lab
+</button>
+
+<button class="reqBtn"
+onclick="sendRequest('SR_BLOCK_ENTRANCE')">
+SR Block Entrance
+</button>
+
+<button class="reqBtn"
+onclick="sendRequest('STUDENT_COUNCIL')">
+Student Council
+</button>
+
+<button class="reqBtn"
+onclick="sendRequest('CV_RAMAN')">
+CV Raman
+</button>
+
+<button class="reqBtn"
+onclick="sendRequest('GATE3')">
+Gate 3
+</button>
+
+<button class="reqBtn"
+onclick="sendRequest('GATE6')">
+Gate 6
+</button>
+
+</div>
+
+<p id="requestStatus"></p>
+
+</div>
+
+</div>
+
+<div class="legend">
+
+<div>
+<img
+src="https://cdn-icons-png.flaticon.com/512/744/744465.png"
+width="20">
+Active
+</div>
+
+<div>
+<img
+src="https://cdn-icons-png.flaticon.com/512/744/744467.png"
+width="20">
+Inactive
+</div>
+
+</div>
+
+<script src="app.js?v=18"></script>
 
 <script>
 
+async function sha256(message){
+
+const msgBuffer =
+new TextEncoder().encode(message);
+
+const hashBuffer =
+await crypto.subtle.digest(
+'SHA-256',
+msgBuffer
+);
+
+const hashArray =
+Array.from(
+new Uint8Array(hashBuffer)
+);
+
+const hashHex =
+hashArray
+.map(b =>
+b.toString(16).padStart(2,'0')
+)
+.join('');
+
+return hashHex;
+
+}
+
 /* ===================================================== */
-/* SERVICE AVAILABILITY */
+/* SERVICE TIME */
 /* ===================================================== */
 
 function isServiceAvailable(){
@@ -31,12 +545,8 @@ indiaTime.getMinutes();
 const currentMinutes =
 (hours * 60) + minutes;
 
-/* 11:30 AM */
-
 const startMinutes =
 (11 * 60) + 30;
-
-/* 4:00 PM */
 
 const endMinutes =
 (16 * 60);
@@ -44,37 +554,29 @@ const endMinutes =
 return (
 
 currentMinutes >= startMinutes &&
-
 currentMinutes <= endMinutes
 
 );
 
 }
 
+function disableLogin(){
 
-/* ===================================================== */
-/* SHOW CLOSED MESSAGE */
-/* ===================================================== */
+document.getElementById(
+"facultyLoginBtn"
+).disabled = true;
 
-function showServiceClosedMessage(){
+document.getElementById(
+"facultyLoginBtn"
+).style.opacity = 0.5;
 
-document.getElementById("loginStatus")
-.innerText =
+document.getElementById(
+"loginStatus"
+).innerText =
 
-"Buggy service available only between 11:30 AM and 4:00 PM";
-
-const loginBtn =
-document.getElementById("facultyLoginBtn");
-
-if(loginBtn){
-
-loginBtn.disabled = true;
-loginBtn.style.opacity = 0.5;
+"Buggy service closed for today";
 
 }
-
-}
-
 
 /* ===================================================== */
 /* RESTORE SESSION */
@@ -82,13 +584,9 @@ loginBtn.style.opacity = 0.5;
 
 window.onload = function(){
 
-/* ===================================================== */
-/* CHECK SERVICE TIME */
-/* ===================================================== */
-
 if(!isServiceAvailable()){
 
-showServiceClosedMessage();
+disableLogin();
 
 return;
 
@@ -163,20 +661,11 @@ error
 
 };
 
-
-/* ===================================================== */
-/* LOGIN */
-/* ===================================================== */
-
 async function loginFaculty(){
-
-/* ===================================================== */
-/* CHECK SERVICE TIME */
-/* ===================================================== */
 
 if(!isServiceAvailable()){
 
-showServiceClosedMessage();
+disableLogin();
 
 return;
 
@@ -243,46 +732,6 @@ return;
 
 }
 
-const age =
-Date.now() - (data.lastLogin || 0);
-
-if(age > 3600000){
-
-firebase.database()
-.ref("facultyAuth/" + facultyId)
-.update({
-
-loggedIn:false
-
-});
-
-}
-
-if(data.loggedIn && age < 3600000){
-
-const forceLogin = confirm(
-
-"Already logged in on another device.\n\nDo you want to force logout previous session?"
-
-);
-
-if(!forceLogin){
-
-return;
-
-}
-
-firebase.database()
-.ref("facultyAuth/" + facultyId)
-.update({
-
-loggedIn:true,
-lastLogin:Date.now()
-
-});
-
-}
-
 firebase.database()
 .ref("facultyAuth/" + facultyId)
 .update({
@@ -314,10 +763,7 @@ showDashboard(facultyId);
 
 .catch(function(error){
 
-console.error(
-"Firebase login error:",
-error
-);
+console.error(error);
 
 document.getElementById("loginStatus")
 .innerText =
@@ -327,16 +773,60 @@ document.getElementById("loginStatus")
 
 }
 
+function showDashboard(facultyId){
 
-/* ===================================================== */
-/* SEND REQUEST */
-/* ===================================================== */
+document.getElementById("loginContainer")
+.style.display = "none";
+
+document.getElementById("mainDashboard")
+.style.display = "block";
+
+document.getElementById("facultyDisplay")
+.innerText =
+"Logged in as Faculty ID: " +
+facultyId;
+
+setTimeout(function(){
+
+initializeMap();
+
+setTimeout(function(){
+
+if(map){
+
+map.invalidateSize(true);
+
+updateMap();
+
+}
+
+},1000);
+
+},300);
+
+}
+
+function logoutFaculty(){
+
+if(currentFacultyId){
+
+firebase.database()
+.ref("facultyAuth/" + currentFacultyId)
+.update({
+
+loggedIn:false
+
+});
+
+}
+
+localStorage.clear();
+
+window.location.reload();
+
+}
 
 function sendRequest(block){
-
-/* ===================================================== */
-/* CHECK SERVICE TIME */
-/* ===================================================== */
 
 if(!isServiceAvailable()){
 
@@ -358,60 +848,7 @@ return;
 
 }
 
-const lastTime =
-localStorage.getItem(
-"lastBuggyRequestTime"
-);
-
-if(lastTime){
-
-const diff =
-Date.now() -
-parseInt(lastTime);
-
-if(diff < 600000){
-
-document.getElementById("requestStatus")
-.innerText =
-"You already requested recently.";
-
-return;
-
-}
-
-}
-
 requestBuggy(block);
-
-localStorage.setItem(
-"lastBuggyRequestTime",
-Date.now()
-);
-
-const buttons =
-document.querySelectorAll(".reqBtn");
-
-buttons.forEach(btn=>{
-
-if(btn.id !== "facultyLoginBtn"){
-
-btn.disabled = true;
-btn.style.opacity = 0.5;
-
-}
-
-});
-
-setTimeout(function(){
-
-buttons.forEach(btn=>{
-
-btn.disabled = false;
-btn.style.opacity = 1;
-
-});
-
-},600000);
 
 document.getElementById("requestStatus")
 .innerText =
@@ -421,7 +858,6 @@ block.replaceAll("_"," ") +
 
 }
 
-
 /* ===================================================== */
 /* AUTO LOGOUT AFTER 4 PM */
 /* ===================================================== */
@@ -430,18 +866,6 @@ setInterval(function(){
 
 if(!isServiceAvailable()){
 
-if(currentFacultyId){
-
-firebase.database()
-.ref("facultyAuth/" + currentFacultyId)
-.update({
-
-loggedIn:false
-
-});
-
-}
-
 localStorage.clear();
 
 window.location.reload();
@@ -449,11 +873,6 @@ window.location.reload();
 }
 
 },60000);
-
-
-/* ===================================================== */
-/* FORCE REFRESH */
-/* ===================================================== */
 
 window.onpageshow =
 function(event){
@@ -465,11 +884,6 @@ window.location.reload();
 }
 
 };
-
-
-/* ===================================================== */
-/* PWA */
-/* ===================================================== */
 
 if('serviceWorker' in navigator){
 
@@ -484,3 +898,7 @@ console.log("PWA enabled");
 }
 
 </script>
+
+</body>
+
+</html>
