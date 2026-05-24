@@ -53,7 +53,7 @@ currentMinutes <= endMinutes
 
 
 /* ===================================================== */
-/* SHOW SERVICE MESSAGE */
+/* SHOW CLOSED MESSAGE */
 /* ===================================================== */
 
 function showServiceClosedMessage(){
@@ -61,7 +61,363 @@ function showServiceClosedMessage(){
 document.getElementById("loginStatus")
 .innerText =
 
-"Buggy service is available only between 11:30 AM and 4:00 PM";
+"Buggy service available only between 11:30 AM and 4:00 PM";
+
+const loginBtn =
+document.getElementById("facultyLoginBtn");
+
+if(loginBtn){
+
+loginBtn.disabled = true;
+loginBtn.style.opacity = 0.5;
+
+}
+
+}
+
+
+/* ===================================================== */
+/* RESTORE SESSION */
+/* ===================================================== */
+
+window.onload = function(){
+
+/* ===================================================== */
+/* CHECK SERVICE TIME */
+/* ===================================================== */
+
+if(!isServiceAvailable()){
+
+showServiceClosedMessage();
+
+return;
+
+}
+
+const savedFaculty =
+localStorage.getItem("facultyId");
+
+const auth =
+localStorage.getItem("facultyAuthenticated");
+
+if(savedFaculty && auth === "true"){
+
+firebase.database()
+.ref("facultyAuth/" + savedFaculty)
+.once("value")
+
+.then(function(snapshot){
+
+const data = snapshot.val();
+
+if(!data){
+
+localStorage.clear();
+return;
+
+}
+
+const age =
+Date.now() - (data.lastLogin || 0);
+
+if(age > 3600000){
+
+firebase.database()
+.ref("facultyAuth/" + savedFaculty)
+.update({
+
+loggedIn:false
+
+});
+
+localStorage.clear();
+
+return;
+
+}
+
+if(data.loggedIn){
+
+currentFacultyId =
+savedFaculty;
+
+isAuthenticated =
+true;
+
+showDashboard(savedFaculty);
+
+}
+
+})
+
+.catch(function(error){
+
+console.error(
+"Session restore error:",
+error
+);
+
+});
+
+}
+
+};
+
+
+/* ===================================================== */
+/* LOGIN */
+/* ===================================================== */
+
+async function loginFaculty(){
+
+/* ===================================================== */
+/* CHECK SERVICE TIME */
+/* ===================================================== */
+
+if(!isServiceAvailable()){
+
+showServiceClosedMessage();
+
+return;
+
+}
+
+const facultyId =
+document.getElementById("facultyIdInput")
+.value
+.trim();
+
+const pin =
+document.getElementById("facultyPinInput")
+.value
+.trim();
+
+if(!facultyId || !pin){
+
+document.getElementById("loginStatus")
+.innerText =
+"Enter Faculty ID and PIN";
+
+return;
+
+}
+
+const hashedPin =
+await sha256(pin);
+
+firebase.database()
+.ref("facultyAuth/" + facultyId)
+.once("value")
+
+.then(function(snapshot){
+
+const data = snapshot.val();
+
+if(!data){
+
+document.getElementById("loginStatus")
+.innerText =
+"Invalid Faculty ID";
+
+return;
+
+}
+
+if(data.active !== true){
+
+document.getElementById("loginStatus")
+.innerText =
+"Faculty access disabled";
+
+return;
+
+}
+
+if(data.pinHash !== hashedPin){
+
+document.getElementById("loginStatus")
+.innerText =
+"Invalid PIN";
+
+return;
+
+}
+
+const age =
+Date.now() - (data.lastLogin || 0);
+
+if(age > 3600000){
+
+firebase.database()
+.ref("facultyAuth/" + facultyId)
+.update({
+
+loggedIn:false
+
+});
+
+}
+
+if(data.loggedIn && age < 3600000){
+
+const forceLogin = confirm(
+
+"Already logged in on another device.\n\nDo you want to force logout previous session?"
+
+);
+
+if(!forceLogin){
+
+return;
+
+}
+
+firebase.database()
+.ref("facultyAuth/" + facultyId)
+.update({
+
+loggedIn:true,
+lastLogin:Date.now()
+
+});
+
+}
+
+firebase.database()
+.ref("facultyAuth/" + facultyId)
+.update({
+
+loggedIn:true,
+lastLogin:Date.now()
+
+});
+
+localStorage.setItem(
+"facultyId",
+facultyId
+);
+
+localStorage.setItem(
+"facultyAuthenticated",
+"true"
+);
+
+currentFacultyId =
+facultyId;
+
+isAuthenticated =
+true;
+
+showDashboard(facultyId);
+
+})
+
+.catch(function(error){
+
+console.error(
+"Firebase login error:",
+error
+);
+
+document.getElementById("loginStatus")
+.innerText =
+"Firebase connection error";
+
+});
+
+}
+
+
+/* ===================================================== */
+/* SEND REQUEST */
+/* ===================================================== */
+
+function sendRequest(block){
+
+/* ===================================================== */
+/* CHECK SERVICE TIME */
+/* ===================================================== */
+
+if(!isServiceAvailable()){
+
+document.getElementById("requestStatus")
+.innerText =
+"Buggy service closed for today";
+
+return;
+
+}
+
+if(!isAuthenticated){
+
+document.getElementById("requestStatus")
+.innerText =
+"Faculty authentication required.";
+
+return;
+
+}
+
+const lastTime =
+localStorage.getItem(
+"lastBuggyRequestTime"
+);
+
+if(lastTime){
+
+const diff =
+Date.now() -
+parseInt(lastTime);
+
+if(diff < 600000){
+
+document.getElementById("requestStatus")
+.innerText =
+"You already requested recently.";
+
+return;
+
+}
+
+}
+
+requestBuggy(block);
+
+localStorage.setItem(
+"lastBuggyRequestTime",
+Date.now()
+);
+
+const buttons =
+document.querySelectorAll(".reqBtn");
+
+buttons.forEach(btn=>{
+
+if(btn.id !== "facultyLoginBtn"){
+
+btn.disabled = true;
+btn.style.opacity = 0.5;
+
+}
+
+});
+
+setTimeout(function(){
+
+buttons.forEach(btn=>{
+
+btn.disabled = false;
+btn.style.opacity = 1;
+
+});
+
+},600000);
+
+document.getElementById("requestStatus")
+.innerText =
+"Request sent from " +
+block.replaceAll("_"," ") +
+". Please wait for the buggy.";
 
 }
 
@@ -73,8 +429,6 @@ document.getElementById("loginStatus")
 setInterval(function(){
 
 if(!isServiceAvailable()){
-
-/* Faculty logout */
 
 if(currentFacultyId){
 
@@ -95,5 +449,38 @@ window.location.reload();
 }
 
 },60000);
+
+
+/* ===================================================== */
+/* FORCE REFRESH */
+/* ===================================================== */
+
+window.onpageshow =
+function(event){
+
+if(event.persisted){
+
+window.location.reload();
+
+}
+
+};
+
+
+/* ===================================================== */
+/* PWA */
+/* ===================================================== */
+
+if('serviceWorker' in navigator){
+
+navigator.serviceWorker
+.register('service-worker.js')
+.then(function(){
+
+console.log("PWA enabled");
+
+});
+
+}
 
 </script>
