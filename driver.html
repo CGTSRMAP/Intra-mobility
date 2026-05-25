@@ -484,7 +484,6 @@ const endMinutes =
 return (
 
 currentMinutes >= startMinutes &&
-
 currentMinutes <= endMinutes
 
 );
@@ -533,7 +532,6 @@ return hashHex;
 
 let currentBuggy = null;
 let selectedBuggy = null;
-let hiddenTimer = null;
 
 const DRIVER_TIMEOUT = 40000;
 
@@ -1031,30 +1029,17 @@ document.getElementById("status").innerText=
 
 }
 
-document.addEventListener("visibilitychange",function(){
+/* ===================================================== */
+/* REMOVE DRIVER ONLY WHEN BROWSER/TAB CLOSES */
+/* ===================================================== */
 
-if(document.hidden){
+window.addEventListener("beforeunload", function () {
 
-hiddenTimer = setTimeout(function(){
+if(currentBuggy){
 
-alert(
-"Session expired because app was inactive."
-);
-
-logoutDriver();
-
-},40000);
-
-}
-else{
-
-if(hiddenTimer){
-
-clearTimeout(hiddenTimer);
-
-hiddenTimer = null;
-
-}
+firebase.database()
+.ref("drivers/" + currentBuggy)
+.remove();
 
 }
 
@@ -1073,6 +1058,10 @@ logoutDriver();
 }
 
 },60000);
+
+/* ===================================================== */
+/* HARD REFRESH */
+/* ===================================================== */
 
 window.onpageshow=function(event){
 
